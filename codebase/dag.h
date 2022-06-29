@@ -14,6 +14,7 @@ class dag
 
 
     std::unordered_map<int, Node*> map;
+    std::vector<int> availNodes;
 
     dag(int y, int x, int width, int height)
     {
@@ -36,7 +37,7 @@ class dag
 
         std::cout<<size<<std::endl;
 
-        populateMap(size/3);
+        populateMap(size/2);
 
         std::cout<<"map size: "<<map.size()<<std::endl;
 
@@ -49,7 +50,11 @@ class dag
 
         for(auto [key, val] : map)
         {
-            val->draw();
+            val->drawNode();
+        }
+        for(auto [key, val] : map)
+        {
+            val->drawEdge();
         }
 
         FsSwapBuffers();
@@ -103,7 +108,7 @@ class dag
         std::cout<<"EXIT x: "<<randIdx%cols<<"  y: "<<randIdx/cols<<" index: "<< randIdx<<std::endl;
 
         map[randIdx] = new Node(randIdx%cols,randIdx/cols,cellSize);
-
+        //availNodes.push_back(randIdx);
 
     }
 

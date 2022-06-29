@@ -11,6 +11,12 @@ int main (int argc, char* argv[])
     int y = atoi(argv[1]);
 
     dag newDag(y,2*y,WIDTH,HEIGHT);
+    newDag.map[0] = new Node(0,0,newDag.cellSize);
+
+    newDag.map[1] = new Node(1,0,newDag.cellSize);
+
+    newDag.map[0]->addNeighbor(newDag.map[1]);
+
 
     //Node* newNode = new Node(50,50);
 

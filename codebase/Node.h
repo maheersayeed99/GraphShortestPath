@@ -17,10 +17,12 @@ class Node
 
     int resolution;
     float drawRadius;
-
-
     int idx;
     
+    bool visited;
+
+
+
     Node(int x, int y, float cellSize)
     {
         idxX = x;
@@ -34,9 +36,11 @@ class Node
 
 
         resolution = 20;
+
+        visited = false;
     }
 
-    void addNode(Node* root)
+    void addNeighbor(Node* root)
     {
         int weight = rand() %10;
         nodeVec.push_back(std::make_tuple(root,weight));
@@ -65,18 +69,22 @@ class Node
 
     void drawEdge()
     {
+        glColor3ub(250,100,200);
+        glLineWidth(5);
+        glBegin(GL_LINES);
         for(auto curr : nodeVec)
         {
-            if (std::get<0>(curr) == nullptr)
-                std::cout<<"this one is null"<<std::endl;
+            glVertex2f(locx,locy);
+            glVertex2f(std::get<0>(curr)->locx,std::get<0>(curr)->locy);
         }
+        glEnd();
 
     }
 
     void draw()
     {
         drawNode();
-        drawEdge();
+        //drawEdge();
     }
 
 };
