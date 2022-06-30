@@ -9,13 +9,14 @@ int main (int argc, char* argv[])
 {
     srand(time(NULL));
     int y = atoi(argv[1]);
+    int d = atoi(argv[2]);
 
-    dag newDag(y,2*y,WIDTH,HEIGHT);
-    newDag.map[0] = new Node(0,0,newDag.cellSize);
+    dag newDag(y,2*y,WIDTH,HEIGHT,d);
+    //newDag.map[0] = new Node(0,0,newDag.cellSize);
 
-    newDag.map[1] = new Node(1,0,newDag.cellSize);
+    //newDag.map[1] = new Node(1,0,newDag.cellSize);
 
-    newDag.map[0]->addNeighbor(newDag.map[1]);
+    //newDag.map[0]->addNeighbor(newDag.map[1]);
 
 
     //Node* newNode = new Node(50,50);
@@ -30,8 +31,10 @@ int main (int argc, char* argv[])
     {
 
         newDag.run();
+        //std::cout<<"ran"<<std::endl;
         //newNode->draw();
         newDag.draw();
+        //std::cout<<"drew"<<std::endl;
     }
     
 
