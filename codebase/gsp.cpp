@@ -33,7 +33,7 @@ int main (int argc, char* argv[])
         newDag.run();
         //std::cout<<"ran"<<std::endl;
         //newNode->draw();
-        newDag.draw();
+        newDag.draw(20,newDag.hide);
         //std::cout<<"drew"<<std::endl;
     }
     

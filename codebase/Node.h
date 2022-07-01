@@ -8,20 +8,18 @@
 class Node
 {
     public:
-    std::vector<std::tuple<Node*, int> > nodeVec;
+    std::vector<std::tuple<Node*, float> > nodeVec;       // vector of neighbors with weights
+    Node* parent;
+
     int idxX,idxY;
-    float radius;
-    float diameter;
-    float twicePi = 3.14159*2;
-    float locx,locy;
+    float radius, diameter, locx, locy;
+    float twicePi = 3.14*2;
 
     int resolution;
     float drawRadius;
     int idx;
     
-    bool visited;
-    bool yellow;
-    bool selected;
+    bool visited, yellow, selected, start, path, dest;
 
     Node(int x, int y, float cellSize)
     {
@@ -30,74 +28,82 @@ class Node
         diameter = cellSize;
         radius  = cellSize/2;
 
-
         locx = idxX*diameter+radius;
         locy = idxY*diameter+radius;
-
 
         resolution = 10;
 
         visited = false;
+        path = false;
         yellow = false;
         selected = false;
+        start = false;
+        dest = false;
     }
 
     void addNeighbor(Node* root)
     {
-        int weight = sqrt(pow(locy-root->locy,2) + pow(locx-root->locx, 2));
+        float weight = sqrt(pow(locy-root->locy,2) + pow(locx-root->locx, 2));    // weight of the edge is the euclidean distance b/w nodes
         nodeVec.push_back(std::make_tuple(root,weight));
     }
 
     void drawNode()
     {
         drawRadius = radius * (nodeVec.size()+1)/3;
-        //glClearColor(0.0,0.0,0.0,0.0);                          // Set background as black
-        //glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
-        if(yellow)
-            glColor3ub(200,0,200);
-        else
-            glColor3ub(82,183,223);
+        glColor3ub(100,100,100);
 
-        glBegin(GL_TRIANGLE_FAN); //BEGIN CIRCLE
-        //glVertex2f(locx+radius, locy+radius); // center of circle
-        glVertex2f(locx,locy); // center of circle
+        if(visited)
+            glColor3ub(255, 195, 0);
+        if(path)
+            glColor3ub(255, 87, 51);
+        if(start)
+            glColor3ub(218, 247, 166);
+        if(dest)
+            glColor3ub(199, 0, 57);
+
+            
+
+        glBegin(GL_TRIANGLE_FAN);                           //BEGIN CIRCLE
+        glVertex2f(locx,locy);                              // center of circle
         for (int i = 0; i <= resolution; i++){
             glVertex2f((locx + (drawRadius * cos(i * twicePi / resolution))), (locy + (drawRadius * sin(i * twicePi / resolution))));
             }
         glEnd();
-
-
-        //FsSwapBuffers();
-        //FsSleep(10);
 
     }
 
     void drawEdge()
     {
         if(selected)
+        {
+            glLineWidth(3);
             glColor3ub(250,100,200);
-        else    
-            glColor3ub(0,0,200);
-        glLineWidth(1);
+        }
+        else 
+        {
+            glColor3ub(100,100,100);
+            glLineWidth(1);
+        }   
+            
         glBegin(GL_LINES);
         for(auto curr : nodeVec)
         {
+            if(std::get<0>(curr)->visited)
+            {
+                glColor3ub(255, 195, 0);
+            }
+            
+            //if((path||start)&&(std::get<0>(curr)->path))
+            //    glColor3ub(255, 87, 51);
+             
             glVertex2f(locx,locy);
             glVertex2f(std::get<0>(curr)->locx,std::get<0>(curr)->locy);
 
-            //glVertex2f(std::get<0>(curr)->locx,std::get<0>(curr)->locy);
-            //glVertex2f(std::get<0>(curr)->locx+5,std::get<0>(curr)->locy+5);
 
         }
         glEnd();
 
-    }
-
-    void draw()
-    {
-        drawNode();
-        //drawEdge();
     }
 
 };
