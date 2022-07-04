@@ -9,7 +9,12 @@ class Node
 {
     public:
     std::vector<std::tuple<Node*, float> > nodeVec;       // vector of neighbors with weights
-    Node* parent;
+    Node* parent = nullptr;
+    float parentScore = 0;
+    std::vector<int> returnPath;
+    //std::string returnPath;
+
+    //std::vector<std::tuple<Node*, float> > parentTup;
 
     int idxX,idxY;
     float radius, diameter, locx, locy;
@@ -74,35 +79,36 @@ class Node
     }
 
     void drawEdge()
-    {
-        if(selected)
-        {
-            glLineWidth(3);
-            glColor3ub(250,100,200);
-        }
-        else 
-        {
-            glColor3ub(100,100,100);
-            glLineWidth(1);
-        }   
+    {  
             
-        glBegin(GL_LINES);
+        glLineWidth(3);
+        
         for(auto curr : nodeVec)
         {
+            glLineWidth(3);
+            glColor3ub(100,100,100);
+
             if(std::get<0>(curr)->visited)
             {
                 glColor3ub(255, 195, 0);
             }
+            if(selected)
+            {
+                glLineWidth(3);
+                glColor3ub(250,250,250);
+            }
             
             //if((path||start)&&(std::get<0>(curr)->path))
             //    glColor3ub(255, 87, 51);
+            glBegin(GL_LINES);
              
             glVertex2f(locx,locy);
             glVertex2f(std::get<0>(curr)->locx,std::get<0>(curr)->locy);
+            glEnd();
 
 
         }
-        glEnd();
+        
 
     }
 

@@ -9,10 +9,13 @@ class dag
 
     public:
     int rows, cols, WIDTH, HEIGHT, size, density;
-    bool term, hide;                                          // used to exit program
+    bool term, hide;                                    // used to exit program
     int key;                                            // user input keyboard
     int lb,mb,rb,mx,my,evt;                             // user input mouse
     float cellSize;                                     // size of hitbox
+    float score;
+
+    int* temp;
 
 
     std::unordered_map<int, Node*> map;                 // graph (directed acyclic)
@@ -38,18 +41,23 @@ class dag
         term = false;
         hide = false;
 
+        score = 0;
+
         FsOpenWindow(50,500,WIDTH,HEIGHT,1);    // Open window
 
         populateMap(size/d);                    // populate random cells in graph with nodes
-        yellowNode();
+        //yellowNode();
         generateDag();                          // connect nodes in graph as a dag
         
     }
 
     void draw(int waitTime = 20, bool hideNodes = false)
     {
+        
         glClearColor(0.0,0.0,0.0,0.0);                          // Set background as black
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+
+        drawReturn();
 
         if (!hideNodes)
         {
@@ -65,10 +73,28 @@ class dag
             }
         }
 
-        drawReturn();
+        
 
         FsSwapBuffers();
         FsSleep(waitTime);
+    }
+
+    void drawReturn()
+    {
+        for (int i = returnPath.size()-1; i>0; --i)
+        {
+            returnPath[i]->path = true;
+            returnPath[i]->drawNode();
+            if(i==1)
+                returnPath[0]->drawNode();
+            glColor3ub(255, 87, 51);
+            glLineWidth(5);
+            glBegin(GL_LINES);
+            glVertex2f(returnPath[i]->locx,returnPath[i]->locy);
+            glVertex2f(returnPath[i-1]->locx,returnPath[i-1]->locy);
+            glEnd();
+        }
+
     }
 
     void run()
@@ -96,7 +122,14 @@ class dag
 
         if (key == FSKEY_B)
         {
+            cleanBoard();
             bfs(map.begin()->second);
+        }
+
+        if (key == FSKEY_D)
+        {
+            cleanBoard();
+            dfs(map.begin()->second);
         }
 
         if (key == FSKEY_H)
@@ -104,10 +137,29 @@ class dag
             hide = !hide;
         }
 
+        if (key == FSKEY_G)
+        {
+            std::string temporary = "1234";
+
+            for (auto curr : temporary)
+            {
+                std::vector<int> one = {1,2,3};
+                std::vector<int> two = one;
+                two.push_back(4);
+                int intarr[4] = {1,2,3,4};
+                int newInt = stoi(temporary);
+                int newInt2 = atoi(&curr);
+                int newInt3 = 5;
+                char tempchar = newInt3;
+                std::cout<<two[3]<<std::endl;
+            }
+        }
+
         
 	    evt=FsGetMouseEvent(lb,mb,rb,mx,my);        // mouse input
 	    if(FSMOUSEEVENT_LBUTTONDOWN==evt)           // if left button clicked
         {
+            std::cout<<mx<<"   "<<my<<std::endl;
             Node* curr = findNode(mx,my);           // find node where the screen is clicked
             if(curr != nullptr)
             {
@@ -126,6 +178,21 @@ class dag
         returnPath.clear();
         map.clear();
     }
+
+    void cleanBoard()
+    {
+        returnPath.clear();
+        for(auto [key, node] : map)
+            {
+                if(node!=nullptr)
+                    node->path = false;
+                    node->visited = false;
+                    node->selected = false;
+                    node->returnPath.clear();
+            }
+    }
+
+
 
     void populateMap(int n)             // add n nodes to dictionary
     {
@@ -193,7 +260,7 @@ class dag
                         nodeQue.back()->addNeighbor(node);          // then it moves the front node to the end of the queue
                         nodeQue.pop();                              // it does this a randNum amount of times
                         nodeQue.push(curr);
-                        draw();
+                        //draw();
 
                     }
 
@@ -201,7 +268,7 @@ class dag
                 else if (!nodeQue.empty()){
 
                     nodeQue.back()->addNeighbor(node);              // nase case while queue isn't long enough to pick 4 neighbors
-                    draw();
+                    //draw();
 
                 }
 
@@ -236,51 +303,91 @@ class dag
 
     }
 
-    Node* dfs(Node* root)
+    
+    bool dfsRecurse(Node* root, float currScore, bool rslt = false)
     {
-        
-        if(root->nodeVec.size() == 0)
+        if (root->dest)
         {
-            root->visited = true;
-
+            score+=currScore;
+            returnPath.push_back(root);
+            return true;
         }
         else
         {
-            for(auto curr : root->nodeVec)
+            for(int i = 0; i<root->nodeVec.size(); ++i)
+            //for(auto curr : root->nodeVec)
             {
-                if (!std::get<0>(curr))
-                Node* rslt = dfs(curr);
-                return rslt;
+                if ((!std::get<0>(root->nodeVec[i])->visited)&&(rslt == false)){
+                    std::get<0>(root->nodeVec[i])->visited = true;
+                    rslt = dfsRecurse(std::get<0>(root->nodeVec[i]),std::get<1>(root->nodeVec[i]));
+                }
+
+                if(rslt)
+                    score+=currScore;
+                    returnPath.push_back(root);
+                    //root->path = true;
+
 
             }
+            return rslt;
 
-        }
-        
-
+        }        
 
     }
 
+    void dfs(Node* root)
+    {
+        score = 0;
+        dfsRecurse(root,score);
+        std::cout<<score<<std::endl;
+    }
+    
     void bfs(Node* root)
     {
         std::queue<Node*> q;
+        score = 0;
 
+        //root->returnPath.push_back(0);
         q.push(root);
+
+        //root->visited = true;
         while (!q.empty())
         {
             Node* frontNode = q.front();
             //draw();
 
             if (frontNode->dest)
-                break;
-
-            frontNode->visited = true;
-
-            for (auto curr : frontNode->nodeVec)
             {
-                if((!std::get<0>(curr)->visited)&&(std::get<0>(curr)!=nullptr))
+                printPath(frontNode->returnPath);
+                std::cout<<std::endl;
+                break;
+            }
+
+            if(frontNode!=nullptr)    
+                frontNode->visited = true;
+
+            //for (auto curr : frontNode->nodeVec)
+            for(int i = 0; i<frontNode->nodeVec.size();++i)
+            {
+                // if node is not visited                       and         node is not null pointer
+                if((!std::get<0>(frontNode->nodeVec[i])->visited)&&(std::get<0>(frontNode->nodeVec[i])!=nullptr))
                 {
-                    q.push(std::get<0>(curr));
-                    std::get<0>(curr)->parent = frontNode;
+                    // set curr as the current neighbor node
+                    Node* curr = std::get<0>(frontNode->nodeVec[i]);
+                    // add it to the queue 
+                    
+
+                    //curr->returnPath = frontNode->returnPath + 
+
+                    // change neighbors return path to path of parent
+                    curr->returnPath = frontNode->returnPath;
+                    // add current index to current neighbors return path
+                    curr->returnPath.push_back(i);
+                    //frontNode->nodeVec[i]
+                    curr->parent = frontNode;
+                    curr->parentScore = std::get<1>(frontNode->nodeVec[i]);
+                    //std::get<0>(curr)->parent = std::make_tuple(frontNode,std::get<1>(c                                                     urr));
+                    q.push(curr);
                 }
             }
 
@@ -289,32 +396,37 @@ class dag
             
         }
 
-        Node* backtrack = q.front();
-        returnPath.push_back(backtrack);
-        while(backtrack->parent!= nullptr)
+        std::vector<int> currPath = q.front()->returnPath;
+
+        //Node* backtrack = q.front();                // node that is found (has return path)
+        Node* beginning = map.begin()->second;      // beginning node
+
+        printPath(currPath);
+        std::cout<<std::endl;
+        printPath(beginning->returnPath);
+
+
+        returnPath.push_back(beginning);
+        for(int i = 0; i< currPath.size(); ++i)
         {
-            backtrack = backtrack->parent;
-            returnPath.push_back(backtrack);
+            int location = currPath[i];
+            //returnPath.push_back(std::get<0>(beginning->nodeVec[location]));
+            
+            beginning =  std::get<0>(beginning->nodeVec[location]);
+            returnPath.push_back(beginning);
+            
         }
 
     }
 
-    void drawReturn()
+    void printPath(std::vector<int> vec)
     {
-        for (int i = returnPath.size()-1; i>0; --i)
+        for(int i = 0; i<vec.size(); ++i)
         {
-            returnPath[i]->path = true;
-            returnPath[i]->drawNode();
-            if(i==1)
-                returnPath[0]->drawNode();
-            glColor3ub(255, 87, 51);
-            glBegin(GL_LINES);
-            glVertex2f(returnPath[i]->locx,returnPath[i]->locy);
-            glVertex2f(returnPath[i-1]->locx,returnPath[i-1]->locy);
-            glEnd();
+            std::cout<<vec[i]<<std::endl;
         }
-
-
     }
+
+    
    
 };
