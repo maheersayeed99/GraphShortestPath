@@ -9,9 +9,7 @@ The next algorithm, breadth-first-search, uses a queue based algorithm to find t
 
 The next algorithm, dijkstra's algorithm, uses a priority queue based algorithm to find the marker. The distances are used this time, and the path with the smallest distance is picked as the shortest path solution. This solution cannot handle negative weights, but that does not concern this program as all the weights on the node edges are positive.  
 
-The final algorithm is the bellman-ford algorithm. This algorithm can handle negative weights, but it is a less efficient algorithm as it has to make multiple passes over the DAG to correctly find the shortest path. This algorithm will visit the most nodes.
-
-![Depth First Search with 125 X 250 Maze](https://github.com/maheersayeed99/SearchVisualizer/blob/main/images/Screen%20Shot%202022-06-23%20at%2010.03.54%20PM.png) 
+The final algorithm is the bellman-ford algorithm. This algorithm can handle negative weights, but it is a less efficient algorithm as it has to make multiple passes over the DAG to correctly find the shortest path. This algorithm will visit the most nodes. 
 
 ## Running the Application
 Cmake is used to build and run the program. Create a build directory outside the repository and enter
@@ -19,6 +17,7 @@ Cmake is used to build and run the program. Create a build directory outside the
 Once the project is built, run by opening the gsp.app file `open ./codebase/gsp.app --args rows density`. rows is an integer that represents the number of rows in the maze. The number of columns will be twice the number of rows. A default value of 20 is used for rows in this program. Density is an integer that represents the fraction of the node grid (1/density) that will have nodes in the generated directed acyclic graph. A default value of 20 is used for the density.
 ## Controls
 `R` Generates a random new DAG and marks the start and end nodes green and red. The DAG generation algorithm is found in algorithms.cpp  
+![DAG Generated](https://github.com/maheersayeed99/GraphShortestPath/images/Select.png)
 `H` Hides everything except the return path.  
 `LEFT CLICK` Highlights the paths to the neighbors of the node that is clicked.
 `D` Finds the marker using depth first search. The recursive algorithm is found in algorithms.cpp   
