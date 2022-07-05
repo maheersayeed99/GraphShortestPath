@@ -14,6 +14,7 @@ class dag
     int key;                                            // user input keyboard
     int lb,mb,rb,mx,my,evt;                             // user input mouse
     float cellSize;                                     // size of hitbox
+    
     float score;
 
     std::unordered_map<int, Node*> map;                 // graph (directed acyclic)
@@ -92,7 +93,7 @@ class dag
 
             glRasterPos2i((returnPath[i]->locx+returnPath[i-1]->locx)/2,(returnPath[i]->locy+returnPath[i-1]->locy)/2);                  // Mode
 		    char str[256];
-            sprintf(str,"%f", returnPath[i]->parentScore);
+            sprintf(str,"%f", returnPath[i-1]->parentScore);
 		    YsGlDrawFontBitmap12x16(str);
         }
 
@@ -137,6 +138,12 @@ class dag
         {
             cleanBoard();
             dijkstra(map.begin()->second);
+        }
+
+        if (key == FSKEY_F)
+        {
+            cleanBoard();
+            bellmanFord(map.begin()->second);
         }
 
         if (key == FSKEY_H)
@@ -308,10 +315,65 @@ class dag
     {
 
     }
+/////////// BELLMAN-FORD ALGORITHM //////////////////////////////////////////////////////////////
 
-    void bellmanFord()
+    void bellmanFord(Node* root)
     {
+        std::queue<Node*> q;
 
+        for(auto[key,val]:map)                  // set all distances to infinity 
+        {
+            val->bfdist = 1000000;              // set all parents to null
+            val->parent = nullptr;
+        }
+        bool done = false;                      // this boolean keeps track of whether search is complete
+        Node* found;                            // when node is found this will be used to access it
+        score = 0;
+
+        while(!done)
+        {
+            done = true;                        // set boolean true and it will turn false if more updating is needed
+            
+            root->bfdist = 0;                   // set start node distance to 0
+            q.push(root);
+
+            while(!q.empty())                                                   // bellman ford loop
+            {
+                Node* frontNode = q.front();                                    // access front element
+
+                if(frontNode->dest)                                             // if found
+                    found = frontNode;
+
+                for(auto curr: frontNode->nodeVec)                              // iterate through all neighbors
+                {
+                    Node* tempNode = std::get<0>(curr);
+                    
+                    float tempDist = frontNode->bfdist + std::get<1>(curr);     // distance
+                    if(tempDist<tempNode->bfdist)
+                    {
+                        tempNode->bfdist = tempDist;                            // update distance if new path is faster
+                        tempNode->parent = frontNode;                           // set parent for backtrack
+                        tempNode->parentScore = std::get<1>(curr);              // set parent score
+                        done = false;                                           // make boolean false if anything is changed in a pass
+                    }
+                    q.push(tempNode);                                           // add neighbor to queue
+
+                }
+
+                q.pop();                                                        // remove latest from queue
+            }
+            //std::cout<<"exited first loop"<<std::endl;
+
+        }
+        //std::cout<<"exited second loop"<<std::endl;
+
+        while(found!=nullptr)                   // begin backtrack
+        {
+            returnPath.push_back(found);        // add to return path
+            score += found->parentScore;        // update score
+            found = found->parent;
+        }
+        std::cout<<score<<std::endl;
     }
 
 /////////// DIJKSTRA ALGORITHM //////////////////////////////////////////////////////////////
@@ -367,17 +429,11 @@ class dag
 
         }
         
-        while(found!=nullptr)
+        while(found!=nullptr)                               // backtrack
         {
-            returnPath.push_back(found);
-            score += found->parentScore;
-            if (found == nullptr)
-                std::cout<<"wow"<<std::endl;
-            else
-                std::cout<<"entry"<<std::endl;
-
-            found = found->parent;
-            
+            returnPath.push_back(found);                    // add to drawing vector
+            score += found->parentScore;                    // increment total score
+            found = found->parent;                          // iterate found
         }
 
         std::cout<<"score = "<<score<<std::endl;
@@ -400,13 +456,13 @@ class dag
             {
                 // This next codeblock is skipped if destination is found
                 if ((!std::get<0>(root->nodeVec[i])->visited)&&(found == false)){        // if neighbor is already visited and search still going 
-                    root->parentScore = std::get<1>(root->nodeVec[i]);                  // set parent score appropriately
+                    std::get<0>(root->nodeVec[i])->parentScore = std::get<1>(root->nodeVec[i]);                  // set parent score appropriately
                     found = dfsRecurse(std::get<0>(root->nodeVec[i]));                  // recurse until found is true
                 }
                 
                 if(found && !root->path){                           // if node is found
                     std::cout<<score<<std::endl;                    
-                    score+=root->parentScore;                       // increment score as backtracking is done
+                    score+=std::get<0>(root->nodeVec[i])->parentScore;                       // increment score as backtracking is done
                     returnPath.push_back(root);                     // add each returned node to return path
                     root->path = true;                              // mark path nodes as visited to account for edge cases
                 }
@@ -450,27 +506,43 @@ class dag
                     curr->returnPath = frontNode->returnPath;                   // different method of backtrack, keep track of every path
                     curr->returnPath.push_back(i);                              // at each level, increment the path to this node from the start
                     curr->parentScore = std::get<1>(frontNode->nodeVec[i]);     // increment parent score
+                    curr->parent = frontNode;
                     q.push(curr);                                               // push edited node to the queue
                 }
             }
 
             q.pop();                        // delete the node at the front of the queue
         }
+        
+        Node* backtrack = q.front();
+        while(backtrack!=nullptr)
+        {
+            returnPath.push_back(backtrack);
+            score+= backtrack->parentScore;
+            backtrack = backtrack->parent;
+        }
 
+        std::cout<<score<<std::endl;
+
+        /*
         std::vector<int> currPath = q.front()->returnPath;        // access return path to destination node
 
-        returnPath.push_back(root);                               // add the start node to return path
+        //returnPath.push_back(root);                               // add the start node to return path
 
         for(int i = 0; i< currPath.size(); ++i)                   // iterate backwards through return path
         {
             std::cout<<score<<std::endl;
             int location = currPath[i];
-            root =  std::get<0>(root->nodeVec[location]);         // find neighbor of current node according to return path
+            
             score+= root->parentScore;                            // update score
             returnPath.push_back(root);                           // update node to be the neighbor
+
+            root =  std::get<0>(root->nodeVec[location]);         // find neighbor of current node according to return path
         }
 
-        std::cout<<score<<std::endl;
+        score+= root->parentScore;
+        returnPath.push_back(root);
+        */
 
     }
 

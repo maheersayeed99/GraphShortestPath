@@ -25,7 +25,7 @@ class Node
     int idx;
     
     float dijkdist;
-    
+    float bfdist;
 
 
     bool visited, yellow, selected, start, path, dest;
