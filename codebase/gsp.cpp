@@ -2,61 +2,32 @@
 #include <string.h>
 #include "dag.h"
 
-int WIDTH = 1200;
-int HEIGHT = 600;
+int WIDTH = 1500;                       // Set Window Width
+int HEIGHT = 600;                       // Set Window Height
 
 int main (int argc, char* argv[])
 {
-    srand(time(NULL));
-    int y = atoi(argv[1]);
-    int d = atoi(argv[2]);
-
-    dag newDag(y,2*y,WIDTH,HEIGHT,d);
-    //newDag.map[0] = new Node(0,0,newDag.cellSize);
-
-    //newDag.map[1] = new Node(1,0,newDag.cellSize);
-
-    //newDag.map[0]->addNeighbor(newDag.map[1]);
-
-
-    //Node* newNode = new Node(50,50);
-
-    std::cout<<7/3<<std::endl;
-    std::cout<<8/3<<std::endl;
+    int y,d;
+    srand(time(NULL));                  // seed chrono
     
-    
+    if(argc<2)
+    {
+        y = 20;                         // set default grid size to 20 rows
+        d = 20;                         // set default density to 1/20
+    }
+    else
+    {
+        y = atoi(argv[1]);
+        d = atoi(argv[2]);
+    }
 
+    dag newDag(y,2*y,WIDTH,HEIGHT,d);   // generate direct acyclic graph
 
     while(!newDag.terminate())
     {
-
         newDag.run();
-        //std::cout<<"ran"<<std::endl;
-        //newNode->draw();
         newDag.draw(20,newDag.hide);
-        //std::cout<<"drew"<<std::endl;
     }
-    
-
-
-
-    /*
-    Node* curr = new Node(x,16);
-
-    std::unordered_map<int,Node*> map1;
-
-    map1[50] = new Node(1,2);
-
-    if (map1[2] == nullptr){
-        std::cout<<"empty"<<std::endl;
-    }
-    else{
-        std::cout<<"not empty"<<std::endl;
-    }
-
-
-    std::cout<< map1[50]->locx <<std::endl;
-    */
 
     return 1;
 }

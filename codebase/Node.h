@@ -8,27 +8,20 @@
 class Node
 {
     public:
-    std::vector<std::tuple<Node*, float> > nodeVec;       // vector of neighbors with weights
-    Node* parent = nullptr;
-    float parentScore = 0;
+    std::vector<std::tuple<Node*, float> > nodeVec;         // vector of neighbors with weights
+    Node* parent = nullptr;                                 // parent node for backtrack
+    float parentScore = 0;                                  // parent score for measuring distance
     std::vector<int> returnPath;
-    //std::string returnPath;
 
-    //std::vector<std::tuple<Node*, float> > parentTup;
-
-    int idxX,idxY;
-    float radius, diameter, locx, locy;
+    int idxX,idxY;                                          // map index
+    float radius, diameter, locx, locy, drawRadius;         // node position variables for drawing
     float twicePi = 3.14*2;
-
     int resolution;
-    float drawRadius;
-    int idx;
+    bool visited, yellow, selected, start, path, dest;      // booleans used for drawing
     
-    float dijkdist;
-    float bfdist;
+    float dijkdist;             // distance used for dijkstra
+    float bfdist;               // distance used for bellman ford
 
-
-    bool visited, yellow, selected, start, path, dest;
 
     Node(int x, int y, float cellSize)
     {
@@ -60,18 +53,18 @@ class Node
     {
         drawRadius = radius * (nodeVec.size()+1)/3;
 
-        glColor3ub(100,100,100);
+        glColor3ub(100,100,100);                    // gray by default
 
         if(visited)
-            glColor3ub(255, 195, 0);
+            glColor3ub(255, 195, 0);                // yellow
         if(path)
-            glColor3ub(255, 87, 51);
+            glColor3ub(253, 127, 57);                // orange
         if(start)
-            glColor3ub(218, 247, 166);
+            glColor3ub(218, 247, 166);              // green
         if(dest)
-            glColor3ub(199, 0, 57);
+            glColor3ub(199, 0, 57);                 // red
         if(yellow)
-            glColor3ub(250, 250, 250);
+            glColor3ub(250, 250, 250);              // white
 
             
 
@@ -87,32 +80,27 @@ class Node
     void drawEdge()
     {  
             
-        glLineWidth(3);
         
-        for(auto curr : nodeVec)
+        for(auto curr : nodeVec)                        // iterate through neighbor list
         {
-            glLineWidth(3);
-            glColor3ub(100,100,100);
+            glLineWidth(1);                             // set width as 3
+            glColor3ub(100,100,100);                    // gray by default
 
             if(std::get<0>(curr)->visited)
             {
-                glColor3ub(255, 195, 0);
+                glColor3ub(255, 195, 0);                // yellow if visited
             }
             if(selected)
             {
                 glLineWidth(3);
-                glColor3ub(250,250,250);
+                glColor3ub(250,250,250);                // white if selected
             }
             
-            //if((path||start)&&(std::get<0>(curr)->path))
-            //    glColor3ub(255, 87, 51);
             glBegin(GL_LINES);
              
             glVertex2f(locx,locy);
             glVertex2f(std::get<0>(curr)->locx,std::get<0>(curr)->locy);
             glEnd();
-
-
         }
         
 
