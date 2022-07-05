@@ -24,6 +24,10 @@ class Node
     float drawRadius;
     int idx;
     
+    float dijkdist;
+    
+
+
     bool visited, yellow, selected, start, path, dest;
 
     Node(int x, int y, float cellSize)
@@ -66,6 +70,8 @@ class Node
             glColor3ub(218, 247, 166);
         if(dest)
             glColor3ub(199, 0, 57);
+        if(yellow)
+            glColor3ub(250, 250, 250);
 
             
 

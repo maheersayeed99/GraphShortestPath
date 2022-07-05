@@ -3,6 +3,7 @@
 #include <chrono>
 #include <queue>
 #include <stack>
+#include <ysglfontdata.h>
 
 class dag
 {
@@ -15,13 +16,10 @@ class dag
     float cellSize;                                     // size of hitbox
     float score;
 
-    int* temp;
-
-
     std::unordered_map<int, Node*> map;                 // graph (directed acyclic)
 
     std::queue<Node*> nodeQue;                          // queue used to generate dag
-    std::vector<Node*> returnPath;
+    std::vector<Node*> returnPath;                      // vector used to draw return path after search is complete
 
     dag(int y, int x, int width, int height, int d)
     {
@@ -46,7 +44,6 @@ class dag
         FsOpenWindow(50,500,WIDTH,HEIGHT,1);    // Open window
 
         populateMap(size/d);                    // populate random cells in graph with nodes
-        //yellowNode();
         generateDag();                          // connect nodes in graph as a dag
         
     }
@@ -73,18 +70,16 @@ class dag
             }
         }
 
-        
-
         FsSwapBuffers();
         FsSleep(waitTime);
     }
 
-    void drawReturn()
+    void drawReturn()                                                           // Draws return path
     {
-        for (int i = returnPath.size()-1; i>0; --i)
+        for (int i = returnPath.size()-1; i>0; --i)                             
         {
             returnPath[i]->path = true;
-            returnPath[i]->drawNode();
+            returnPath[i]->drawNode();                                          // draw the node itself
             if(i==1)
                 returnPath[0]->drawNode();
             glColor3ub(255, 87, 51);
@@ -93,6 +88,12 @@ class dag
             glVertex2f(returnPath[i]->locx,returnPath[i]->locy);
             glVertex2f(returnPath[i-1]->locx,returnPath[i-1]->locy);
             glEnd();
+            glColor3ub(82,183,223);
+
+            glRasterPos2i((returnPath[i]->locx+returnPath[i-1]->locx)/2,(returnPath[i]->locy+returnPath[i-1]->locy)/2);                  // Mode
+		    char str[256];
+            sprintf(str,"%f", returnPath[i]->parentScore);
+		    YsGlDrawFontBitmap12x16(str);
         }
 
     }
@@ -132,6 +133,12 @@ class dag
             dfs(map.begin()->second);
         }
 
+        if (key == FSKEY_J)
+        {
+            cleanBoard();
+            dijkstra(map.begin()->second);
+        }
+
         if (key == FSKEY_H)
         {
             hide = !hide;
@@ -165,6 +172,9 @@ class dag
             {
                curr->selected = !curr->selected;    // highlight all edges of said node
             }
+            else{
+                delete curr;
+            }
 	    }
     }
 
@@ -189,6 +199,7 @@ class dag
                     node->visited = false;
                     node->selected = false;
                     node->returnPath.clear();
+                    node->parentScore = 0;
             }
     }
 
@@ -203,11 +214,11 @@ class dag
                 addNode(true);
             else    
                 addNode();
-        }
+        }   
         map.begin()->second->start = true;      // color start node a different color
     }
 
-    void addNode(bool dest = false)
+    bool addNode(bool dest = false)
     {
         int randX = rand()%cols;                                    // pick random cell to put node
         int randY = rand()%rows;
@@ -284,16 +295,16 @@ class dag
         int idxX = x/cellSize;
         int idxY = y/cellSize;
         //std::cout<<idxX<<"   "<<idxY<<std::endl;
-        return map[idxY*cols+idxX];
+        if(map[idxY*cols+idxX]!=nullptr)
+            return map[idxY*cols+idxX];
+        else{
+            map.erase(idxY*cols+idxX);
+
+        }
     }
 
 
     void topSort()
-    {
-
-    }
-
-    void dijkstra()
     {
 
     }
@@ -303,123 +314,167 @@ class dag
 
     }
 
-    
-    bool dfsRecurse(Node* root, float currScore, bool rslt = false)
+/////////// DIJKSTRA ALGORITHM //////////////////////////////////////////////////////////////
+    void dijkstra(Node* root)
     {
-        if (root->dest)
+        //std::queue<Node*> q; 
+        score = 0;
+        auto cmp = [](Node* node1, Node* node2) { return node1->dijkdist > node2->dijkdist;};   // initialize priority queue
+        std::priority_queue<Node*,std::vector<Node*>, decltype(cmp)> priorQ(cmp);               // queue uses dijkstra distance
+
+        Node* found;                                    // initialize found node
+
+        for(auto [key,val] : map)                       // fill priority queue
         {
-            score+=currScore;
-            returnPath.push_back(root);
-            return true;
+            if(val == root)
+                val->dijkdist = 0;                      // start node distance is 0
+            else
+                val->dijkdist  =10000000;               // all other nodes distance is infinity
+                val->parent = nullptr;                  // set parent node as nullpointer
+            priorQ.push(val);
+        }
+
+        while (!priorQ.empty())                         // while priority queue is not empty
+        {
+            Node* frontNode = priorQ.top();             // access first element (call it frontNode)
+            frontNode->visited = true;                                           // mark as visited
+
+            if (frontNode->dest)                        // if node is found
+                {
+                    std::cout<<"found!!!"<<std::endl;
+                    found = frontNode;
+                    break;
+                }
+            
+            for(auto currNode : frontNode->nodeVec)                                 // iterate through list of neighbors
+            {
+                Node* tempNode  = std::get<0>(currNode);                            // isolate node from tuple
+                if(!tempNode->visited)
+                {
+                    float tempDist = std::get<1>(currNode) + frontNode->dijkdist;       // distance is the distance of parent node + cost to new node
+                    if(tempDist < tempNode->dijkdist)                                   // if this distance is less than existing distance
+                    {                    
+                        tempNode->parent = frontNode;                                   // set parent as frontnode
+                        //frontNode->parentScore = std::get<1>(currNode);
+                        tempNode->parentScore = std::get<1>(currNode);                  // adjust score
+                        tempNode->dijkdist = tempDist;                                  // update distance (now it will move up in priority queue)
+                        priorQ.push(tempNode);
+                    }
+                }
+            }
+
+            priorQ.pop();                                                           // pop current smalles distance
+
+        }
+        
+        while(found!=nullptr)
+        {
+            returnPath.push_back(found);
+            score += found->parentScore;
+            if (found == nullptr)
+                std::cout<<"wow"<<std::endl;
+            else
+                std::cout<<"entry"<<std::endl;
+
+            found = found->parent;
+            
+        }
+
+        std::cout<<"score = "<<score<<std::endl;
+
+    }
+
+////////// DEPTH FIRST SEARCH ALGORITHM ///////////////////////////////
+    
+    bool dfsRecurse(Node* root, bool found = false)      // recursive function takes start node and a boolean
+    {
+        if (root->dest)                                 // if target found
+        {
+            returnPath.push_back(root);                 // add destination to return path
+            root->visited = true;                       // mark node as visited
+            return true;                                // return true
         }
         else
         {
-            for(int i = 0; i<root->nodeVec.size(); ++i)
-            //for(auto curr : root->nodeVec)
+            for(int i = 0; i<root->nodeVec.size(); ++i)                                 // iterate through neighbor list
             {
-                if ((!std::get<0>(root->nodeVec[i])->visited)&&(rslt == false)){
-                    std::get<0>(root->nodeVec[i])->visited = true;
-                    rslt = dfsRecurse(std::get<0>(root->nodeVec[i]),std::get<1>(root->nodeVec[i]));
+                // This next codeblock is skipped if destination is found
+                if ((!std::get<0>(root->nodeVec[i])->visited)&&(found == false)){        // if neighbor is already visited and search still going 
+                    root->parentScore = std::get<1>(root->nodeVec[i]);                  // set parent score appropriately
+                    found = dfsRecurse(std::get<0>(root->nodeVec[i]));                  // recurse until found is true
                 }
-
-                if(rslt)
-                    score+=currScore;
-                    returnPath.push_back(root);
-                    //root->path = true;
-
-
+                
+                if(found && !root->path){                           // if node is found
+                    std::cout<<score<<std::endl;                    
+                    score+=root->parentScore;                       // increment score as backtracking is done
+                    returnPath.push_back(root);                     // add each returned node to return path
+                    root->path = true;                              // mark path nodes as visited to account for edge cases
+                }
             }
-            return rslt;
-
-        }        
-
+            return found;                                           // return boolean, this will be true only if target is found
+        }     
     }
 
-    void dfs(Node* root)
+    void dfs(Node* root)            // separate function make just to keep track of score
     {
         score = 0;
-        dfsRecurse(root,score);
+        dfsRecurse(root);
         std::cout<<score<<std::endl;
     }
     
+
+
+////////// BREADTH FIRST SEARCH ALGORITHM ///////////////////////////////
+
     void bfs(Node* root)
     {
-        std::queue<Node*> q;
-        score = 0;
+        std::queue<Node*> q;                            // Use a first in first out queue
+        score = 0;                                      // Set score as 0
+        q.push(root);                                   // Add starting node to queue
 
-        //root->returnPath.push_back(0);
-        q.push(root);
-
-        //root->visited = true;
         while (!q.empty())
         {
-            Node* frontNode = q.front();
-            //draw();
+            Node* frontNode = q.front();                // isolate node at the front of the queue
 
-            if (frontNode->dest)
-            {
-                printPath(frontNode->returnPath);
-                std::cout<<std::endl;
+            if (frontNode->dest)                        // if destination is found, break out of loop
                 break;
-            }
 
-            if(frontNode!=nullptr)    
-                frontNode->visited = true;
-
-            //for (auto curr : frontNode->nodeVec)
+            //std::cout<<frontNode->nodeVec.size()<< "  This the number of neighbors"<<std::endl;
             for(int i = 0; i<frontNode->nodeVec.size();++i)
             {
-                // if node is not visited                       and         node is not null pointer
-                if((!std::get<0>(frontNode->nodeVec[i])->visited)&&(std::get<0>(frontNode->nodeVec[i])!=nullptr))
+                Node* curr = std::get<0>(frontNode->nodeVec[i]);
+                // if node is not visited
+                if(curr->visited==false)
                 {
-                    // set curr as the current neighbor node
-                    Node* curr = std::get<0>(frontNode->nodeVec[i]);
-                    // add it to the queue 
-                    
-
-                    //curr->returnPath = frontNode->returnPath + 
-
-                    // change neighbors return path to path of parent
-                    curr->returnPath = frontNode->returnPath;
-                    // add current index to current neighbors return path
-                    curr->returnPath.push_back(i);
-                    //frontNode->nodeVec[i]
-                    curr->parent = frontNode;
-                    curr->parentScore = std::get<1>(frontNode->nodeVec[i]);
-                    //std::get<0>(curr)->parent = std::make_tuple(frontNode,std::get<1>(c                                                     urr));
-                    q.push(curr);
+                    curr->visited = true;                                       // mark node as visited
+                    curr->returnPath = frontNode->returnPath;                   // different method of backtrack, keep track of every path
+                    curr->returnPath.push_back(i);                              // at each level, increment the path to this node from the start
+                    curr->parentScore = std::get<1>(frontNode->nodeVec[i]);     // increment parent score
+                    q.push(curr);                                               // push edited node to the queue
                 }
             }
 
-            q.pop();
-
-            
+            q.pop();                        // delete the node at the front of the queue
         }
 
-        std::vector<int> currPath = q.front()->returnPath;
+        std::vector<int> currPath = q.front()->returnPath;        // access return path to destination node
 
-        //Node* backtrack = q.front();                // node that is found (has return path)
-        Node* beginning = map.begin()->second;      // beginning node
+        returnPath.push_back(root);                               // add the start node to return path
 
-        printPath(currPath);
-        std::cout<<std::endl;
-        printPath(beginning->returnPath);
-
-
-        returnPath.push_back(beginning);
-        for(int i = 0; i< currPath.size(); ++i)
+        for(int i = 0; i< currPath.size(); ++i)                   // iterate backwards through return path
         {
+            std::cout<<score<<std::endl;
             int location = currPath[i];
-            //returnPath.push_back(std::get<0>(beginning->nodeVec[location]));
-            
-            beginning =  std::get<0>(beginning->nodeVec[location]);
-            returnPath.push_back(beginning);
-            
+            root =  std::get<0>(root->nodeVec[location]);         // find neighbor of current node according to return path
+            score+= root->parentScore;                            // update score
+            returnPath.push_back(root);                           // update node to be the neighbor
         }
+
+        std::cout<<score<<std::endl;
 
     }
 
-    void printPath(std::vector<int> vec)
+    void printPath(std::vector<int> vec)                            // helper function to print the path
     {
         for(int i = 0; i<vec.size(); ++i)
         {
@@ -427,6 +482,4 @@ class dag
         }
     }
 
-    
-   
 };
