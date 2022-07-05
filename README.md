@@ -11,15 +11,19 @@ The next algorithm, dijkstra's algorithm, uses a priority queue based algorithm 
 
 The final algorithm is the bellman-ford algorithm. This algorithm can handle negative weights, but it is a less efficient algorithm as it has to make multiple passes over the DAG to correctly find the shortest path. This algorithm will visit the most nodes. 
 
+![DAG Generated](https://github.com/maheersayeed99/GraphShortestPath/blob/main/images/Dijkstra.png)  
+
 ## Running the Application
 Cmake is used to build and run the program. Create a build directory outside the repository and enter
 `cmake add ./GraphShortestPath`. After this, build the program with the command `cmake --build . --target gsp --config Release`. 'gsp' is the name of the target executable for this program.  
 Once the project is built, run by opening the gsp.app file `open ./codebase/gsp.app --args rows density`. rows is an integer that represents the number of rows in the maze. The number of columns will be twice the number of rows. A default value of 20 is used for rows in this program. Density is an integer that represents the fraction of the node grid (1/density) that will have nodes in the generated directed acyclic graph. A default value of 20 is used for the density.
 ## Controls
 `R` Generates a random new DAG and marks the start and end nodes green and red. The DAG generation algorithm is found in algorithms.cpp  
-![DAG Generated](https://github.com/maheersayeed99/GraphShortestPath/images/Select.png)
+![DAG Generated](https://github.com/maheersayeed99/GraphShortestPath/blob/main/images/generateDAG.png)  
 `H` Hides everything except the return path.  
-`LEFT CLICK` Highlights the paths to the neighbors of the node that is clicked.
+![DAG Generated](https://github.com/maheersayeed99/GraphShortestPath/blob/main/images/breadthfirst.png)  
+`LEFT CLICK` Highlights the paths to the neighbors of the node that is clicked.  
+![DAG Generated](https://github.com/maheersayeed99/GraphShortestPath/blob/main/images/Select.png)  
 `D` Finds the marker using depth first search. The recursive algorithm is found in algorithms.cpp   
 `B` Finds the marker using breadth first search. The iterative queue based algorithm is found in algorithms.cpp  
 `J` Finds the marker using Dijkstra's algorithm. The weights are the euclidean distances between the neighboring nodes. The priority queue based algorithm is found in algorithms.cpp  
